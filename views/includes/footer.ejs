@@ -1,0 +1,157 @@
+<footer>
+    <div class="container">
+        <div class="row" style="font-family: 'Lato', sans-serif; color:black;">
+            Made with love by Hardik, Gaurav and Chinmay &copy; <%= new Date().getFullYear() %>
+        </div>
+    </div>
+</footer>
+</div>
+
+<head>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet">
+</head>
+<div class="modal fade" id="replyModal" tabindex="-1" role="dialog" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" style="font-family: 'Lato', sans-serif;">Reply</h5>
+				<button type="button" class="mtr-btn close" style="font-family: 'Lato', sans-serif; background-color: white; color: #000; border-radius: 14px;" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+
+			<div class="modal-body" style="font-family: 'Lato', sans-serif;">
+				<form onsubmit="return doPostReply(this);">
+					<input type="hidden" name="postId">
+					<input type="hidden" name="commentId">
+					<textarea name="reply" placeholder="Post your reply"></textarea>
+					<button class="mtr-btn" style="font-family: 'Lato', sans-serif; background-color: white; color: #000; border-radius: 14px;" type="submit">Post</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="/public/js/jquery-3.3.1.min.js"></script>
+<script src="/public/js/script.js"></script>
+<script src="/public/js/main.min.js"></script>
+<script src="/public/js/socket.io.js"></script>
+
+
+<script>
+
+window.user = null;
+
+function getUserMentor() {
+
+    if (localStorage.getItem("accessToken")) {
+
+        var ajax = new XMLHttpRequest();
+        ajax.open("POST", "/getUserMentor", true);
+
+        ajax.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+
+                var response = JSON.parse(this.responseText);
+
+                if (response.status == "success") {
+                    window.user = response.data;
+
+                    if (typeof isUpdateProfile !== "undefined" && isUpdateProfile) {
+                        showProfileData();
+                    }
+
+                    if (typeof isAllProjectsPage !== "undefined" && isAllProjectsPage) {
+                        showprojectsfeed();
+                    }
+
+                    if (typeof isStudentProposalsPage !== "undefined" && isStudentProposalsPage) {
+                        showstudentproposalsfeed();
+                    }
+
+                    if (typeof isAddProjectPage !== "undefined" && isAddProjectPage) {
+                        showAddproject();
+                    }
+
+                    if (typeof isMyProjects !== "undefined" && isMyProjects) {
+                        showCompletedApplicationsfeed();
+                        showPendingApplicationsfeed();
+                    }
+
+                    if (typeof isGrading !== "undefined" && isGrading) {
+                        showGradingfeed(); 
+                    }
+
+                } else {
+                    localStorage.removeItem("accessToken");
+                }
+                showMainMenu();
+            }
+        };
+
+        var formData = new FormData();
+        formData.append("accessToken", localStorage.getItem("accessToken"));
+        ajax.send(formData);
+    } else {
+        showMainMenu();
+    }
+}
+
+function showMainMenu() {
+    var html = "";
+
+    if (localStorage.getItem("accessToken")) {
+        html += '<li>';
+            html += '<a href="/allProjectsMentor" style="font-family: "Lato", sans-serif;">Open projects</a> ';
+        html += '</li>';
+
+        html += '<li>';
+            html += '<a href="/student_proposals" style="font-family: "Lato", sans-serif;">Student proposals</a> ';
+        html += '</li>';
+
+        html += '<li>';
+            html += '<a href="/my_projects" style="font-family: "Lato", sans-serif;">My projects</a> ';
+        html += '</li>';
+
+        html += '<li>';
+            html += '<a href="/grading" style="font-family: "Lato", sans-serif;">Grading</a> ';
+        html += '</li>';
+
+        html += '<li>';
+            html += '<a href="/updateProfileMentor" style="font-family: "Lato", sans-serif;">Profile</a>';
+        html += '</li>';
+
+        html += '<li>';
+            html += '<a href="/logoutMentor" onclick="return doLogoutMentor();" style="font-family: "Lato", sans-serif;">Logout</a>';
+        html += '</li>';
+    } else {
+        html += '<li>';
+            html += '<a href="/loginMentor" style="font-family: "Lato", sans-serif;">Login</a>';
+        html += '</li>';
+
+        html += '<li>';
+            html += '<a href="/signupMentor" style="font-family: "Lato", sans-serif;">Signup</a>';
+        html += '</li>';
+    }
+
+    document.getElementById("main-menu").innerHTML = html;
+}
+
+function doLogoutMentor() {
+    localStorage.removeItem("accessToken");
+    return true;
+}
+
+window.onload = function () {
+    getUserMentor();
+};
+
+window.onerror = function (file, line, error) {
+    alert(file + " " + line + " " + error);
+};
+</script>
+
+</body>
+
+</html>

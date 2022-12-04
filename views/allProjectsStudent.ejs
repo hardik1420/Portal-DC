@@ -1,0 +1,203 @@
+<%- include ("includes/studentHeader") %>
+
+<section>
+	<div class="gap green-bg">
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-12">
+					<div class="row" id="page-contents">
+
+						<div class="col-md-3">
+
+						</div>
+
+						<div class="col-md-6">
+
+							<div id="add-project-btn" class="tryhard">
+								<form onsubmit="return proposeProjectBtn(this);">
+									<div class="submit-btns">
+										<button name="submit" type="submit" class="mtr-btn btnmodify2">
+											<span style="color:black">Propose new project</span>
+										</button>
+									</div>
+								</form>
+							</div>
+
+							<h2 style="color: white; font-weight: bold;" class="">Open projects</h2>
+							<hr>
+							<div class="central-meta item">
+							<div id="search-project-btn">
+								<input style='height:40px' class="col-md-12" type="text" id="myInput" onkeyup="showprojectsfeedstudent()" placeholder="Search by mentor" title="Type mentor's name">
+								
+							</div>
+							<br>
+
+							<div class="loadMore" id="projectsfeedStudent">
+
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<script>
+	var isAllProjectsStudentPage = true;
+
+	function proposeProjectBtn(form) {
+		form.submit.setAttribute("disabled", "disabled");
+		form.submit.innerHTML = "<span>Loading...</span>";
+        window.location.href = "/addNewProjectStudent";
+		var ajax = new XMLHttpRequest();
+		ajax.open("POST", "/allProjectsStudent", true);
+		ajax.send(new FormData(form));
+		return false;
+	}
+
+	function showprojectsfeedstudent() {
+		var ajax = new XMLHttpRequest();
+		ajax.open("POST", "/getprojectsfeedStudent", true);
+
+		ajax.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+
+				var response = JSON.parse(this.responseText);
+				var input = document.getElementById("myInput");
+    			var filter = input.value.toUpperCase();
+				var html = "";
+				// html+= '<h2 class="" style="color: white; font-weight: bold;">';
+				// html += "Open projects";
+				// html+= "</h2>";
+				// html += '<hr>';
+				// html += '<div class="central-meta item">';
+					var isAccepted=false;
+					for(var a=0;a < response.data.length; a++){
+						var data = response.data[a];
+						for (var b=0;b<data.mentees.length;b++){
+							var tempData=data.mentees[b];
+							if(tempData._id == window.user._id && tempData.status=="accepted"){
+								isAccepted=true;
+								break;
+							}
+						}
+					}
+				for (var a = 0; a < response.data.length; a++) {
+					var data = response.data[a];
+					if(data.status=="pending" && data.user._id!=window.user._id  && (!filter || data.user.name.toUpperCase().includes(filter))){
+						html += '<div class="central-meta item">';
+							html += '<div class="user-project">';
+								html += '<div class="project-info">';
+
+									html += '<div class="title colortxtblack">';
+											html += '<h2>';
+												html += data.title;
+											html += '<h2>';
+									html += '</div>';
+									html+='<hr>';
+
+									html += '<div class="user-name colortxtblack">';
+										html += '<span>Added by : ';
+													html += data.user.name;
+										html+= '</span>';
+									html += '</div>';
+
+									if(data.user._id!=data.proposed_by._id){
+										html += '<div class="user-name colortxtblack">';
+											html += '<span>Proposed by: ';
+												html += data.proposed_by.name;
+											html+= '</span>';
+										html += '</div>';
+									}
+									html += '<div class="project-date colortxtblack">';
+										var createdAt = new Date(data.createdAt);
+										var date = createdAt.getDate() + "";
+										date = date.padStart(2, "0") + " " + months[createdAt.getMonth()] + ", " + createdAt.getFullYear();
+
+										html += '<span>Floated on : ' + date + '</span>';
+									html += '</div>';
+									html+='<br>';
+
+									html += '<div class="project-meta colortxtblack">';
+										
+										html += '<div>';
+											html+= 'Description';
+											html += '<div >';
+												html += '<p>';
+													html += data.description;
+												html += '</p>';
+											html += '</div>';
+										html += '</div>';
+
+										html += '<div>';
+											html+= 'Skills required';
+											html += '<div class="skills">';
+												html += '<p>';
+													html += data.skills;
+												html += '</p>';
+											html += '</div>';
+										html += '</div>';
+
+										if (data.status == "pending") {
+											var isMentee = false;
+											for (var b=0;b<data.mentees.length;b++){
+												var tempData=data.mentees[b];
+												if(tempData._id == window.user._id){
+													isMentee=true;
+													break;
+												}
+											}
+
+											html += '<div>';
+											if(!isAccepted && !isMentee && data.user._id!=window.user._id){
+												
+													html+='<form>'
+														html+='<button type="submit" style="background-color: white; color: #000; border-radius: 14px;" class="mtr-btn show-interest-btn" mentee-id="'+ window.user._id +'" project-id="' + data._id + '" mentor-id="' + data.user._id + '" onclick="addMenteeRequest(this);" class="btn add mentee">Show interest</button>'
+													html+='</form>'
+											}
+											html += '</div>';
+										}
+									html += '</div>';
+								html += '</div>';
+							html += '</div>';
+						html += '</div>';
+					}
+
+					
+				}
+				html += '</div>';
+				document.getElementById("projectsfeedStudent").innerHTML = html;
+			}
+		};
+        
+		var formData = new FormData();
+		formData.append("accessToken", localStorage.getItem("accessToken"));
+		ajax.send(formData);
+	}
+
+	function addMenteeRequest(self){
+		var mentee_id = self.getAttribute("mentee-id");
+		var project_id = self.getAttribute("project-id");
+		var mentor_id = self.getAttribute("mentor-id");
+		var ajax = new XMLHttpRequest();
+		ajax.open("POST", "/addMenteeRequest", true);
+
+		ajax.onreadystatechange = function() {
+			if (this.readyState ==4 && this.status == 200){
+				var response = JSON.parse(this.responseText);
+				alert(response.message);
+				self.remove();
+			}
+		};
+
+		var formData = new FormData();
+		formData.append("accessToken", localStorage.getItem("accessToken"));
+		formData.append("mentee_id", mentee_id);
+		formData.append("project_id", project_id);
+		formData.append("mentor_id", mentor_id);
+		ajax.send(formData);
+	}
+</script>
+
+<%- include ("includes/studentFooter") %>
